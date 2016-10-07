@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xsd:schema xmlns="http://www.devefx.org/schema/snio"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            targetNamespace="http://www.devefx.org/schema/snio"
+            elementFormDefault="qualified"
+            attributeFormDefault="unqualified">
+
+    <xsd:complexType name="decoderType">
+        <xsd:attribute name="class" type="xsd:string" use="required"/>
+    </xsd:complexType>
+
+    <xsd:complexType name="servicesType">
+        <xsd:choice minOccurs="0" maxOccurs="unbounded">
+            <xsd:element name="service">
+                <xsd:complexType>
+                    <xsd:attribute name="id" type="xsd:ID" use="optional"/>
+                    <xsd:attribute name="class" type="xsd:string" use="required"/>
+                    <xsd:attribute name="register" type="xsd:boolean" use="optional"/>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:choice>
+    </xsd:complexType>
+
+    <xsd:complexType name="serverType">
+        <xsd:all>
+            <xsd:element name="decoder" type="decoderType"/>
+            <xsd:element name="services" type="servicesType"/>
+        </xsd:all>
+        <xsd:attribute name="name" type="xsd:string" use="required"/>
+        <xsd:attribute name="port" type="xsd:int" use="optional"/>
+    </xsd:complexType>
+
+    <xsd:element name="engine">
+        <xsd:complexType>
+            <xsd:choice minOccurs="0" maxOccurs="unbounded">
+                <xsd:element name="tcp" type="serverType">
+                    <xsd:annotation>
+                        <xsd:documentation><![CDATA[ The tcp config ]]></xsd:documentation>
+                    </xsd:annotation>
+                </xsd:element>
+                <xsd:element name="udp" type="serverType">
+                    <xsd:annotation>
+                        <xsd:documentation><![CDATA[ The udp config ]]></xsd:documentation>
+                    </xsd:annotation>
+                </xsd:element>
+            </xsd:choice>
+            <xsd:attribute name="id" type="xsd:ID"/>
+            <xsd:attribute name="host" type="xsd:string"/>
+            <xsd:attribute name="manager-ref" type="xsd:IDREF"/>
+            <xsd:attribute name="auto-start" type="xsd:boolean" default="true"/>
+        </xsd:complexType>
+    </xsd:element>
+
+</xsd:schema>

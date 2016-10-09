@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
-import java.util.Map;
 
 public abstract class ContainerBase implements Container, Lifecycle {
     private static Logger log = LoggerFactory.getLogger(ContainerBase.class);

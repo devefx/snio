@@ -9,15 +9,15 @@
 
     <!-- 自定义会话管理器 -->
     <bean id="redisSessionManager" class="org.devefx.snio.session.redis.RedisSessionManager">
-        <property name="host" value="127.0.0.1"/>
-        <property name="port" value="6379"/>
+        <property name="host" value="192.168.3.6"/>
+        <property name="port" value="6388"/>
         <property name="database" value="0"/>
         <property name="maxInactiveInterval" value="60"/>
-        <property name="password" value="thepass"/>
+        <property name="password" value="redispwd"/>
     </bean>
 
     <!-- 服务器引擎 -->
-    <snio:engine id="engine" host="localhost" auto-start="true">
+    <snio:engine id="engine" host="localhost" auto-start="true" manager-ref="redisSessionManager">
         <!-- tcp服务器 -->
         <snio:udp name="udp-server" port="7777">
             <snio:decoder class="org.devefx.snio.codec.ByteArrayDecoder"/>

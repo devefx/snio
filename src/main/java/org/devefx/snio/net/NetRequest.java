@@ -19,6 +19,7 @@ public class NetRequest implements Request {
     private Session session;
     private InetSocketAddress localAddress;
     private InetSocketAddress remoteAddress;
+    private Context context;
     private Object content;
 
     @Override
@@ -107,10 +108,15 @@ public class NetRequest implements Request {
 
     @Override
     public Context getContext() {
-        return null;
+        return context;
     }
+    
+    public void setContext(Context context) {
+		this.context = context;
+	}
 
-    @Override
+	@Override
+	@SuppressWarnings("unchecked")
     public <T> T readerObject(Class<T> requiredClass) {
         if (!requiredClass.isAssignableFrom(content.getClass())) {
             log.error(sm.getString("netRequest.readerObject", content.getClass().getName(), requiredClass.getName()));

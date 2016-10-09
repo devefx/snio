@@ -5,7 +5,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.socket.DatagramPacket;
 import org.devefx.snio.*;
-import org.devefx.snio.codec.ByteArrayDecoder;
 import org.devefx.snio.codec.MessageToMessageDecoder;
 import org.devefx.snio.core.StandardEngine;
 import org.devefx.snio.net.connector.*;
@@ -19,11 +18,11 @@ import java.util.Map;
 public class NetChannelHandler extends ChannelInboundHandlerAdapter {
     private static final String PROTOCOL_UDP = "UDP";
     private static final String PROTOCOL_TCP = "TCP";
+    
     private Map<SocketAddress, String> addrMapperSession = new HashMap<>(100);
+    private NetContext context = new NetContext();
     private MessageDispatcher dispatcher;
-    private MessageToMessageDecoder decoder;
-    private Manager manager;
-
+    
     public NetChannelHandler(Server server, MessageToMessageDecoder decoder) {
         Service[] services = server.findServices();
         dispatcher = new MessageDispatcher(services.length);
@@ -31,22 +30,17 @@ public class NetChannelHandler extends ChannelInboundHandlerAdapter {
             dispatcher.addService(services[i]);
         }
         dispatcher.start();
-
-        this.decoder = decoder;
-        if (decoder == null) {
-            this.decoder = new ByteArrayDecoder();
-        }
-
+        
         final StandardEngine engine = (StandardEngine) server.getEngine();
         engine.addLifecycleListener(new LifecycleListener() {
             @Override
             public void lifecycleEvent(LifecycleEvent event) {
                 if (Lifecycle.AFTER_START_EVENT.equals(event.getType())) {
-                    manager = engine.getManager();
+                    context.setManager(engine.getManager());
                 }
             }
         });
-
+        context.setDecoder(decoder);
     }
 
     @Override
@@ -68,7 +62,7 @@ public class NetChannelHandler extends ChannelInboundHandlerAdapter {
         if (cause instanceof IOException) {
             SocketAddress addr = ctx.channel().remoteAddress();
             if (addr != null) {
-                Session session = getSession(addr, -1);
+                Session session = getOrCreateSession(addr, -1);
                 session.expire();
             }
         }
@@ -77,14 +71,14 @@ public class NetChannelHandler extends ChannelInboundHandlerAdapter {
 
     private void readInUdp(ChannelHandlerContext ctx, DatagramPacket packet) throws Exception {
         // decoder
-        Message message = decoder.decode(packet.content());
+        Message message = context.getDecoder().decode(packet.content());
 
         // request
-        Session session = getSession(packet.sender(), 60);
-        if (session.getSender() == null) {
-            session.setSender(new UdpSender(ctx.channel(), packet.sender()));
-        }
-
+        Session session = getOrCreateSession(packet.sender(), 60);
+        if (context.findSender(session.getId()) == null) {
+        	context.addSender(session.getId(), new UdpSender(ctx.channel(), packet.sender()));
+		}
+        
         NetRequest request = new NetRequest();
         request.setProtocol(PROTOCOL_UDP);
         request.setLocalAddress(packet.recipient());
@@ -92,6 +86,7 @@ public class NetChannelHandler extends ChannelInboundHandlerAdapter {
         request.setContentLength(packet.content().capacity());
         request.setContent(message.getContent());
         request.setSession(session);
+        request.setContext(context);
 
         // dispatcher
         fireRequestEvent(request, message.getType());
@@ -99,14 +94,14 @@ public class NetChannelHandler extends ChannelInboundHandlerAdapter {
 
     private void readInTcp(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
         // decoder
-        Message message = decoder.decode(msg);
+        Message message = context.getDecoder().decode(msg);
 
         // request
-        Session session = getSession(ctx.channel().remoteAddress(), -1);
-        if (session.getSender() == null) {
-            session.setSender(new TcpSender(ctx.channel()));
-        }
-
+        Session session = getOrCreateSession(ctx.channel().remoteAddress(), -1);
+        if (context.findSender(session.getId()) == null) {
+        	context.addSender(session.getId(), new TcpSender(ctx.channel()));
+		}
+        
         NetRequest request = new NetRequest();
         request.setProtocol(PROTOCOL_TCP);
         request.setLocalAddress((InetSocketAddress) ctx.channel().localAddress());
@@ -114,21 +109,22 @@ public class NetChannelHandler extends ChannelInboundHandlerAdapter {
         request.setContentLength(msg.capacity());
         request.setContent(message.getContent());
         request.setSession(session);
-
+        request.setContext(context);
+        
         // dispatcher
         fireRequestEvent(request, message.getType());
     }
 
-    private Session getSession(SocketAddress addr, int interval) throws IOException {
-        String sessionId = addrMapperSession.get(addr);
-        Session session = null;
-        if (sessionId == null || (session = manager.findSession(sessionId)) == null) {
-            session = manager.createSession(null);
+	public Session getOrCreateSession(SocketAddress addr, int interval) throws IOException {
+		String sessionId = addrMapperSession.get(addr);
+		Session session = null;
+		if (sessionId == null || (session = context.getManager().findSession(sessionId)) == null) {
+            session = context.getManager().createSession(null);
             session.setMaxInactiveInterval(interval);
-            addrMapperSession.put(addr, session.getId());
+            context.getManager().add(session);
         }
-        return session;
-    }
+		return session;
+	}
 
     public void fireRequestEvent(Request request, Object type) {
         dispatcher.push(new MessageEvent(request, type));

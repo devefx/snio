@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 
 public class EngineBeanDefinitionParser implements BeanDefinitionParser {
-    private static final String CONTEXT_LOADER_BEAN_NAME = "org.devefx.snio.config.spring.ContextLoader@11894";
     private static final String TCP_ELEMENT = "tcp";
     private static final String UDP_ELEMENT = "udp";
 
@@ -31,7 +30,7 @@ public class EngineBeanDefinitionParser implements BeanDefinitionParser {
     private static final String MANAGER_PROPERTY = "manager";
     private static final String AUTO_START_PROPERTY = "autoStart";
 
-    private final Map<String, BeanDefinitionParser> parsers = new HashMap();
+    private final Map<String, BeanDefinitionParser> parsers = new HashMap<>();
 
     public EngineBeanDefinitionParser() {
         init();

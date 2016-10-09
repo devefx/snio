@@ -2,7 +2,7 @@ package org.devefx.snio;
 
 public interface Service {
 
-    <T> T getType();
+    Object getType();
 
     void service(Request request);
 

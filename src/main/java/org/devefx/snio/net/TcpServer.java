@@ -9,7 +9,6 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
-import org.devefx.snio.Lifecycle;
 import org.devefx.snio.codec.MessageToMessageDecoder;
 import org.devefx.snio.core.ServerBase;
 import org.slf4j.Logger;
@@ -83,9 +82,11 @@ public class TcpServer extends ServerBase implements Runnable {
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
                     if (future.isSuccess()) {
-
+                    	if (log.isInfoEnabled()) {
+                    		log.info("");
+						}
                     } else {
-                        throw new RuntimeException("");
+                        
                     }
                 }
             }).sync().channel().closeFuture().await();

@@ -77,7 +77,9 @@ public class UdpServer extends ServerBase implements Runnable {
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
                     if (future.isSuccess()) {
-
+                    	if (log.isInfoEnabled()) {
+                    		log.info("");
+						}
                     } else {
 
                     }

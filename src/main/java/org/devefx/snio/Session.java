@@ -1,8 +1,5 @@
 package org.devefx.snio;
 
-import org.devefx.snio.net.Sender;
-
-import java.io.IOException;
 import java.security.Principal;
 import java.util.Enumeration;
 
@@ -49,10 +46,6 @@ public interface Session {
     void access();
 
     void endAccess();
-
-    Sender getSender();
-
-    void setSender(Sender sender);
 
     void addSessionListener(SessionListener listener);
 

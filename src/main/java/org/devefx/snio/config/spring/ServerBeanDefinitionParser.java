@@ -19,7 +19,7 @@ public class ServerBeanDefinitionParser implements BeanDefinitionParser {
     private static final String NAME_ATTRIBUTE = "name";
     private static final String PORT_ATTRIBUTE = "port";
 
-    private final Map<String, BeanDefinitionParser> parsers = new HashMap();
+    private final Map<String, BeanDefinitionParser> parsers = new HashMap<>();
     private final Class<?> beanClass;
 
     public ServerBeanDefinitionParser(Class<? extends Server> beanClass) {

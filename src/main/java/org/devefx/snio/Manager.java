@@ -60,6 +60,8 @@ public interface Manager {
     Session findSession(String id) throws IOException;
 
     Session[] findSessions();
+    
+    String[] findSessionIds();
 
     void backgroundProcess();
 }

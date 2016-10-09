@@ -202,6 +202,11 @@ public abstract class ManagerBase implements Manager {
     public Session[] findSessions() {
         return sessions.values().toArray(new Session[0]);
     }
+    
+    @Override
+    public String[] findSessionIds() {
+    	return sessions.keySet().toArray(new String[0]);
+    }
 
     @Override
     public void backgroundProcess() {
@@ -412,6 +417,10 @@ public abstract class ManagerBase implements Manager {
         }
         getRandom().nextBytes(bytes);
     }
+    
+    protected boolean containsSession(String id) {
+    	return sessions.containsKey(id);
+    }
 
     protected synchronized String generateSessionId() {
         byte[] random = new byte[16];
@@ -446,7 +455,7 @@ public abstract class ManagerBase implements Manager {
 
                 result = buffer.toString();
             }
-        } while (sessions.containsKey(result));
+        } while (containsSession(result));
 
         return result;
     }

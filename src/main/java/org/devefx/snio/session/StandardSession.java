@@ -4,7 +4,6 @@ import org.devefx.snio.Manager;
 import org.devefx.snio.Session;
 import org.devefx.snio.SessionEvent;
 import org.devefx.snio.SessionListener;
-import org.devefx.snio.net.Sender;
 import org.devefx.snio.util.Enumerator;
 import org.devefx.snio.util.StringManager;
 
@@ -33,7 +32,6 @@ public class StandardSession implements Session {
     protected transient PropertyChangeSupport support;
     protected volatile long thisAccessedTime;
     protected transient AtomicInteger accessCount;
-    protected transient Sender sender;
 
     public StandardSession(Manager manager) {
         this.lastAccessedTime = this.creationTime;
@@ -199,16 +197,6 @@ public class StandardSession implements Session {
         if (ACTIVITY_CHECK) {
             accessCount.decrementAndGet();
         }
-    }
-
-    @Override
-    public void setSender(Sender sender) {
-        this.sender = sender;
-    }
-
-    @Override
-    public Sender getSender() {
-        return sender;
     }
 
     @Override

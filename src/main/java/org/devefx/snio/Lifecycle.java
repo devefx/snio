@@ -10,6 +10,7 @@ public interface Lifecycle {
     String AFTER_STOP_EVENT = "after_stop";
     String DESTROY_EVENT = "destroy";
     String PERIODIC_EVENT = "periodic";
+    String SESSION_EXPIRED_EVENT = "session_expired";
 
     void addLifecycleListener(LifecycleListener listener);
 

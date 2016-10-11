@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.JedisPubSub;
 import redis.clients.jedis.JedisSentinelPool;
 import redis.clients.jedis.Protocol;
 import redis.clients.util.Pool;
@@ -285,6 +286,7 @@ public class RedisSessionManager extends StandardManager implements Lifecycle {
     public void start() throws LifecycleException {
     	if (!started) {
     		initializeDatabaseConnection();
+    		initializeSubscribe();
 		}
     	super.start();
     }
@@ -397,6 +399,12 @@ public class RedisSessionManager extends StandardManager implements Lifecycle {
 		}
     }
     
+    private void initializeSubscribe() {
+    	Thread thread = new Thread(new KeySubscribe(), "RedisSubscribe");
+    	thread.setDaemon(true);
+    	thread.start();
+    }
+    
     protected RedisSession deserializer(byte[] data) {
     	Input input = null;
     	try {
@@ -425,5 +433,27 @@ public class RedisSessionManager extends StandardManager implements Lifecycle {
     static {
     	kryo = new Kryo();
     	kryo.register(RedisSession.class);
+    }
+    
+    class KeySubscribe extends JedisPubSub implements Runnable {
+    	@Override
+    	public void onPMessage(String pattern, String channel, String message) {
+    		if (log.isInfoEnabled()) {
+				log.info(pattern + "=" + channel + "=" + message);
+    		}
+    		lifecycle.fireLifecycleEvent(SESSION_EXPIRED_EVENT, message);
+    	}
+    	@Override
+    	public void run() {
+    		Jedis jedis = null;
+	    	try {
+				jedis = acquireConnection();
+				jedis.psubscribe(this, "*");
+			} finally {
+				if (jedis != null) {
+					jedis.close();
+				}
+			}
+    	}
     }
 }

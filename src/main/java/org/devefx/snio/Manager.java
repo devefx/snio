@@ -3,7 +3,7 @@ package org.devefx.snio;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 
-public interface Manager {
+public interface Manager extends Lifecycle {
 
     Container getContainer();
 

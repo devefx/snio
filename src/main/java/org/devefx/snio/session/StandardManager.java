@@ -1,13 +1,9 @@
 package org.devefx.snio.session;
 
-import org.devefx.snio.Lifecycle;
 import org.devefx.snio.LifecycleException;
-import org.devefx.snio.LifecycleListener;
 import org.devefx.snio.Session;
-import org.devefx.snio.util.LifecycleSupport;
 
-public class StandardManager extends ManagerBase implements Lifecycle {
-    protected LifecycleSupport lifecycle = new LifecycleSupport(this);
+public class StandardManager extends ManagerBase {
     protected int maxActiveSessions = -1;
     protected boolean started = false;
     protected int rejectedSessions = 0;
@@ -49,21 +45,6 @@ public class StandardManager extends ManagerBase implements Lifecycle {
             throw new IllegalStateException(sm.getString("standardManager.createSession.ise"));
         }
         return super.createSession(sessionId);
-    }
-
-    @Override
-    public void addLifecycleListener(LifecycleListener listener) {
-        lifecycle.addLifecycleListener(listener);
-    }
-
-    @Override
-    public LifecycleListener[] findLifecycleListeners() {
-        return lifecycle.findLifecycleListeners();
-    }
-
-    @Override
-    public void removeLifecycleListener(LifecycleListener listener) {
-        lifecycle.removeLifecycleListener(listener);
     }
 
     @Override

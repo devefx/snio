@@ -45,6 +45,10 @@ public class NetContext implements Context {
 		senderMap.put(sessionId, sender);
 	}
 	
+	protected void removeSender(String sessionId) {
+		senderMap.remove(sessionId);
+	}
+	
 	protected static MessageToMessageDecoder getDefaultDecoder() {
 		if (defaultDecoder == null) {
 			defaultDecoder = new ByteArrayDecoder();

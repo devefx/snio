@@ -36,7 +36,9 @@ public class NetChannelHandler extends ChannelInboundHandlerAdapter {
             @Override
             public void lifecycleEvent(LifecycleEvent event) {
                 if (Lifecycle.AFTER_START_EVENT.equals(event.getType())) {
-                    context.setManager(engine.getManager());
+                	Manager manager = engine.getManager();
+                	manager.addLifecycleListener(new SessionLifecycleListener());
+                    context.setManager(manager);
                 }
             }
         });
@@ -122,11 +124,27 @@ public class NetChannelHandler extends ChannelInboundHandlerAdapter {
             session = context.getManager().createSession(null);
             session.setMaxInactiveInterval(interval);
             context.getManager().add(session);
+            addrMapperSession.put(addr, session.getId());
         }
 		return session;
 	}
 
     public void fireRequestEvent(Request request, Object type) {
         dispatcher.push(new MessageEvent(request, type));
+    }
+    
+    class SessionLifecycleListener implements LifecycleListener {
+		@Override
+		public void lifecycleEvent(LifecycleEvent event) {
+			if (Lifecycle.SESSION_EXPIRED_EVENT.equals(event.getType())) {
+				String sessionId = (String) event.getData();
+				for (Map.Entry<SocketAddress, String> entry : addrMapperSession.entrySet()) {
+					if (entry.getValue().equals(sessionId)) {
+						addrMapperSession.remove(entry.getKey());
+					}
+				}
+				context.removeSender(sessionId);
+			}
+		}
     }
 }

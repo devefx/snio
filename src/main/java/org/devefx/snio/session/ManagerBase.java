@@ -1,8 +1,10 @@
 package org.devefx.snio.session;
 
 import org.devefx.snio.Container;
+import org.devefx.snio.LifecycleListener;
 import org.devefx.snio.Manager;
 import org.devefx.snio.Session;
+import org.devefx.snio.util.LifecycleSupport;
 import org.devefx.snio.util.StringManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +46,7 @@ public abstract class ManagerBase implements Manager {
     protected int processExpiresFrequency = 6;
     protected StringManager sm = StringManager.getManager("org.devefx.snio.session");
     protected PropertyChangeSupport support = new PropertyChangeSupport(this);
+    protected LifecycleSupport lifecycle = new LifecycleSupport(this);
 
     @Override
     public Container getContainer() {
@@ -172,7 +175,22 @@ public abstract class ManagerBase implements Manager {
     public void removePropertyChangeListener(PropertyChangeListener listener) {
         support.removePropertyChangeListener(listener);
     }
+    
+    @Override
+    public void addLifecycleListener(LifecycleListener listener) {
+        lifecycle.addLifecycleListener(listener);
+    }
 
+    @Override
+    public LifecycleListener[] findLifecycleListeners() {
+        return lifecycle.findLifecycleListeners();
+    }
+
+    @Override
+    public void removeLifecycleListener(LifecycleListener listener) {
+        lifecycle.removeLifecycleListener(listener);
+    }
+    
     @Override
     public Session createEmptySession() {
         return new StandardSession(this);
@@ -226,6 +244,7 @@ public abstract class ManagerBase implements Manager {
 
         for(int timeEnd = 0; timeEnd < sessions.length; ++timeEnd) {
             if(sessions[timeEnd] != null && !sessions[timeEnd].isValid()) {
+            	lifecycle.fireLifecycleEvent(SESSION_EXPIRED_EVENT, sessions[timeEnd].getId());
                 ++expireHere;
             }
         }

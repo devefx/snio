@@ -83,7 +83,9 @@ public class TcpServer extends ServerBase implements Runnable {
                 public void operationComplete(ChannelFuture future) throws Exception {
                     if (future.isSuccess()) {
                     	if (log.isInfoEnabled()) {
-                    		log.info("");
+                        	if (log.isInfoEnabled()) {
+                        		log.info(getInfo() + "[" + getPort() +"] Started");
+    						}
 						}
                     } else {
                         

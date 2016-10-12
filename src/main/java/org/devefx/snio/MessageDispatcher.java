@@ -64,6 +64,9 @@ public class MessageDispatcher implements Runnable {
         synchronized (serviceMap) {
             Service service = serviceMap.get(type);
             if (service != null) {
+            	if (log.isInfoEnabled()) {
+                    log.info("[id: " + type + "] EXECUTE");
+                }
                 service.service(request);
             } else {
                 if (log.isInfoEnabled()) {

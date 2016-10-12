@@ -141,6 +141,7 @@ public class NetChannelHandler extends ChannelInboundHandlerAdapter {
 				for (Map.Entry<SocketAddress, String> entry : addrMapperSession.entrySet()) {
 					if (entry.getValue().equals(sessionId)) {
 						addrMapperSession.remove(entry.getKey());
+						break;
 					}
 				}
 				context.removeSender(sessionId);

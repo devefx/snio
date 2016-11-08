@@ -19,6 +19,7 @@
                 </xsd:complexType>
             </xsd:element>
         </xsd:choice>
+        <xsd:attribute name="scan-package" type="xsd:string" use="optional"/>
     </xsd:complexType>
 
     <xsd:complexType name="serverType">

@@ -38,6 +38,9 @@ public abstract class ServerBase implements Lifecycle, Server {
 
     @Override
     public void addService(Service service) {
+    	if (service.getType() == null) {
+			throw new RuntimeException(service + ": type is null");
+		}
         serviceMap.put(service.getType(), service);
     }
 

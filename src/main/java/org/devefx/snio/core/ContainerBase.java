@@ -13,7 +13,7 @@ import java.util.ArrayList;
 public abstract class ContainerBase implements Container, Lifecycle {
 
     private static Logger log = LoggerFactory.getLogger(ContainerBase.class);
-    protected int backgroundProcessorDelay = -1;
+    protected int backgroundProcessorDelay = 10;
     protected LifecycleSupport lifecycle = new LifecycleSupport(this);
     protected ArrayList<ContainerListener> listeners = new ArrayList<>();
     protected String logName = null;

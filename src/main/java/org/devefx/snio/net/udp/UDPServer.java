@@ -5,6 +5,7 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import org.devefx.snio.LifecycleException;
+import org.devefx.snio.codec.SnioDecoder;
 import org.devefx.snio.net.ServerBase;
 import org.devefx.snio.net.ServerHandler;
 import org.slf4j.Logger;
@@ -59,6 +60,8 @@ public class UDPServer extends ServerBase implements Runnable {
             protected void initChannel(NioDatagramChannel ch) throws Exception {
                 if (serverInitializer != null) {
                     serverInitializer.initChannel(ch, UDPServer.this);
+                } else {
+                    ch.pipeline().addLast(new SnioDecoder(getContainer().getManager()));
                 }
                 ch.pipeline().addLast(new ServerHandler(dispatcher));
             }

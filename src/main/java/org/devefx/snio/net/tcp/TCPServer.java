@@ -10,6 +10,7 @@ import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import org.devefx.snio.LifecycleException;
+import org.devefx.snio.codec.SnioDecoder;
 import org.devefx.snio.net.ServerBase;
 import org.devefx.snio.net.ServerHandler;
 import org.slf4j.Logger;
@@ -85,6 +86,8 @@ public class TCPServer extends ServerBase implements Runnable {
                 }
                 if (serverInitializer != null) {
                     serverInitializer.initChannel(ch, TCPServer.this);
+                } else {
+                    ch.pipeline().addLast(new SnioDecoder(getContainer().getManager()));
                 }
                 ch.pipeline().addLast(new ServerHandler(dispatcher));
             }

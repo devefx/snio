@@ -4,96 +4,56 @@ import org.devefx.snio.Engine;
 import org.devefx.snio.Lifecycle;
 import org.devefx.snio.LifecycleException;
 import org.devefx.snio.Server;
+import org.devefx.snio.session.StandardManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.ArrayList;
 
 public class StandardEngine extends ContainerBase implements Engine {
+
     private static Logger log = LoggerFactory.getLogger(StandardEngine.class);
-    private static final Server[] EMPTY_ARRAY = new Server[0];
-    private String defaultHost = "0.0.0.0";
-    private Map<String, Server> serverMap = new ConcurrentHashMap<>();
+    private ArrayList<Server> servers = new ArrayList<>();
+    private String host = "localhost";
     private boolean stopAwait = false;
 
     @Override
+    public String getHost() {
+        return host;
+    }
+
+    @Override
+    public void setHost(String host) {
+        String oldHost = this.host;
+        this.host = host;
+        support.firePropertyChange("host", oldHost, host);
+    }
+
+    @Override
     public String getInfo() {
-        return "StandardEngine/1.0";
-    }
-
-    @Override
-    public String getDefaultHost() {
-        return defaultHost;
-    }
-
-    @Override
-    public void setDefaultHost(String host) {
-        String oldDefaultHost = this.defaultHost;
-        this.defaultHost = host;
-        support.firePropertyChange("defaultHost", oldDefaultHost, host);
-    }
-
-    @Override
-    public void addServer(Server server) {
-        server.setEngine(this);
-        serverMap.put(server.getName(), server);
-        if (initialized) {
-            try {
-                server.initialize();
-            } catch (LifecycleException e) {
-                log.error(sm.getString("standardEngine.addServer.initialize"), e);
-            }
-        }
-        if (started && server instanceof Lifecycle) {
-            try {
-                ((Lifecycle) server).start();
-            } catch (LifecycleException e) {
-                log.error(sm.getString("standardEngine.addServer.start"), e);
-            }
-        }
-        support.firePropertyChange("server", null, server);
-    }
-
-    @Override
-    public Server findServer(String name) {
-        if (name == null) {
-            return null;
-        }
-        return serverMap.get(name);
-    }
-
-    @Override
-    public Server[] findServers() {
-        return serverMap.values().toArray(EMPTY_ARRAY);
-    }
-
-    @Override
-    public void removeServer(Server server) {
-        serverMap.remove(server);
+        return "StandardEngine/1.1";
     }
 
     public void init() throws LifecycleException {
         if (!initialized) {
-            initialized = true;
-            for (Server server : findServers()) {
+            if (manager == null) {
+                setManager(new StandardManager());
+            }
+            for (Server server : servers) {
                 server.initialize();
             }
+            initialized = true;
         }
     }
 
     @Override
     public void start() throws LifecycleException {
         if (!started) {
-            if (!initialized) {
-                init();
-            }
-            for (Server server: findServers()) {
+            init();
+            for (Server server : servers) {
                 if (server instanceof Lifecycle) {
                     ((Lifecycle) server).start();
                 }
             }
-
             super.start();
         }
     }
@@ -101,7 +61,7 @@ public class StandardEngine extends ContainerBase implements Engine {
     @Override
     public void stop() throws LifecycleException {
         if (started) {
-            for (Server server: findServers()) {
+            for (Server server : servers) {
                 if (server instanceof Lifecycle) {
                     ((Lifecycle) server).stop();
                 }
@@ -119,16 +79,47 @@ public class StandardEngine extends ContainerBase implements Engine {
             try {
                 Thread.sleep(10000L);
             } catch (InterruptedException e) {
-
+                // ignore
             }
         }
     }
 
     @Override
-    public String toString() {
-        StringBuffer sb = new StringBuffer("StandardEngine[");
-        sb.append(this.getName());
-        sb.append("]");
-        return sb.toString();
+    public void addServer(Server server) {
+        server.setContainer(this);
+        synchronized (servers) {
+            servers.add(server);
+            if (initialized) {
+                try {
+                    server.initialize();
+                } catch (LifecycleException e) {
+                    log.error(sm.getString("standardEngine.addServer.initialize", server), e);
+                    return;
+                }
+            }
+            if (started && server instanceof Lifecycle) {
+                try {
+                    ((Lifecycle) server).start();
+                } catch (LifecycleException e) {
+                    log.error(sm.getString("standardEngine.addServer.start", server), e);
+                    return;
+                }
+            }
+            support.firePropertyChange("servers", null, server);
+        }
+    }
+
+    @Override
+    public Server[] findServers() {
+        synchronized (servers) {
+            return servers.toArray(new Server[servers.size()]);
+        }
+    }
+
+    @Override
+    public void removeServer(Server server) {
+        synchronized (servers) {
+            servers.remove(server);
+        }
     }
 }

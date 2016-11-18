@@ -2,23 +2,50 @@ package org.devefx.snio.config;
 
 import org.devefx.snio.Server;
 import org.devefx.snio.Service;
+import org.devefx.snio.net.ServerBase;
+import org.devefx.snio.net.ServerInitializer;
+import org.devefx.snio.net.tcp.TCPServer;
 import org.springframework.beans.factory.FactoryBean;
 
-import java.util.Iterator;
 import java.util.List;
 
 public class ServerFactoryBean implements FactoryBean<Server> {
 
-    private Server server;
+    private ServerBase server;
 
-    public ServerFactoryBean(Server server) {
+    public ServerFactoryBean(ServerBase server) {
         this.server = server;
     }
 
+    public void setServerInitializer(ServerInitializer serverInitializer) {
+        server.setServerInitializer(serverInitializer);
+    }
+
     public void setServices(List<Service> services) {
-        Iterator<Service> it = services.iterator();
-        while (it.hasNext()) {
-            server.addService(it.next());
+        if (services != null) {
+            for (Service service : services) {
+                server.addService(service);
+            }
+        }
+    }
+
+    public void setPort(int port) {
+        server.setPort(port);
+    }
+
+    public void setLengthFieldLength(int lengthFieldLength) {
+        if (server instanceof TCPServer) {
+            ((TCPServer) server).setLengthFieldLength(lengthFieldLength);
+        } else {
+            throw new RuntimeException("setLengthFieldLength: Can only use TCPServer.");
+        }
+    }
+
+    public void setLengthFieldOffset(int lengthFieldOffset) {
+        if (server instanceof TCPServer) {
+            ((TCPServer) server).setLengthFieldOffset(lengthFieldOffset);
+        } else {
+            throw new RuntimeException("setLengthFieldOffset: Can only use TCPServer.");
         }
     }
 

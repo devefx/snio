@@ -27,4 +27,6 @@ public interface Container {
 	void removeContainerListener(ContainerListener listener);
 	
 	void addPropertyChangeListener(PropertyChangeListener listener);
+
+	void removePropertyChangeListener(PropertyChangeListener listener);
 }

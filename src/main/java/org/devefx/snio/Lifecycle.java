@@ -21,4 +21,5 @@ public interface Lifecycle {
     void start() throws LifecycleException;
 
     void stop() throws LifecycleException;
+
 }

@@ -1,7 +1,6 @@
 package org.devefx.snio.core;
 
 import org.devefx.snio.*;
-import org.devefx.snio.session.StandardManager;
 import org.devefx.snio.util.LifecycleSupport;
 import org.devefx.snio.util.StringManager;
 import org.slf4j.Logger;
@@ -12,6 +11,7 @@ import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
 
 public abstract class ContainerBase implements Container, Lifecycle {
+
     private static Logger log = LoggerFactory.getLogger(ContainerBase.class);
     protected int backgroundProcessorDelay = -1;
     protected LifecycleSupport lifecycle = new LifecycleSupport(this);
@@ -27,11 +27,6 @@ public abstract class ContainerBase implements Container, Lifecycle {
     private boolean threadDone = false;
 
     @Override
-    public String getInfo() {
-        return "ContainerBase/1.0";
-    }
-
-    @Override
     public Manager getManager() {
         return manager;
     }
@@ -41,7 +36,8 @@ public abstract class ContainerBase implements Container, Lifecycle {
         Manager oldManager = this.manager;
         if(oldManager != manager) {
             this.manager = manager;
-            if(started && oldManager != null && oldManager instanceof Lifecycle) {
+
+            if (started && oldManager != null && oldManager instanceof Lifecycle) {
                 try {
                     ((Lifecycle) oldManager).stop();
                 } catch (LifecycleException e) {
@@ -49,11 +45,11 @@ public abstract class ContainerBase implements Container, Lifecycle {
                 }
             }
 
-            if(manager != null) {
+            if (manager != null) {
                 manager.setContainer(this);
             }
 
-            if(started && manager != null && manager instanceof Lifecycle) {
+            if (started && manager != null && manager instanceof Lifecycle) {
                 try {
                     ((Lifecycle) manager).start();
                 } catch (LifecycleException e) {
@@ -94,67 +90,23 @@ public abstract class ContainerBase implements Container, Lifecycle {
                 try {
                     manager.backgroundProcess();
                 } catch (Exception e) {
-                    log.warn(sm.getString("containerBase.backgroundProcess.manager", manager), e);
+                    log.warn(sm.getString("containerBase.backgroundProcess.manager", this.manager), e);
                 }
             }
             lifecycle.fireLifecycleEvent(PERIODIC_EVENT, null);
         }
     }
 
-    @Deprecated
-    @Override
-    public void addContainerListener(ContainerListener listener) {
-        synchronized (listeners) {
-            listeners.add(listener);
-        }
-    }
-
-    @Deprecated
-    @Override
-    public ContainerListener[] findContainerListeners() {
-        return listeners.toArray(new ContainerListener[0]);
-    }
-
-    @Deprecated
-    @Override
-    public void removeContainerListener(ContainerListener listener) {
-        listeners.remove(listener);
-    }
-
-    @Override
-    public void addPropertyChangeListener(PropertyChangeListener listener) {
-        support.addPropertyChangeListener(listener);
-    }
-
-    @Override
-    public void addLifecycleListener(LifecycleListener listener) {
-        lifecycle.addLifecycleListener(listener);
-    }
-
-    @Override
-    public LifecycleListener[] findLifecycleListeners() {
-        return lifecycle.findLifecycleListeners();
-    }
-
-    @Override
-    public void removeLifecycleListener(LifecycleListener listener) {
-        lifecycle.removeLifecycleListener(listener);
-    }
-
     @Override
     public void start() throws LifecycleException {
-        if(started) {
-            if(log.isInfoEnabled()) {
+        if (started) {
+            if (log.isInfoEnabled()) {
                 log.info(sm.getString("containerBase.alreadyStarted", logName()));
             }
         } else {
             lifecycle.fireLifecycleEvent(BEFORE_START_EVENT, null);
             started = true;
-
-            if (manager == null) {
-                setManager(new StandardManager());
-            }
-            if (manager != null && manager instanceof Lifecycle) {
+            if (manager instanceof Lifecycle) {
                 ((Lifecycle) manager).start();
             }
             lifecycle.fireLifecycleEvent(START_EVENT, null);
@@ -171,27 +123,60 @@ public abstract class ContainerBase implements Container, Lifecycle {
             }
         } else {
             lifecycle.fireLifecycleEvent(BEFORE_STOP_EVENT, null);
-            threadStop();
-            lifecycle.fireLifecycleEvent(STOP_EVENT, null);
             started = false;
-
-            if (manager != null && manager instanceof Lifecycle) {
-                ((Lifecycle)manager).stop();
+            if (manager instanceof Lifecycle) {
+                ((Lifecycle) manager).stop();
             }
+            lifecycle.fireLifecycleEvent(STOP_EVENT, null);
+            threadStop();
             lifecycle.fireLifecycleEvent(AFTER_STOP_EVENT, null);
         }
     }
 
-    @Deprecated
-    public void fireContainerEvent(String type, Object data) {
-        if(listeners.size() >= 1) {
-            ContainerEvent event = new ContainerEvent(this, type, data);
-            synchronized(listeners) {
-                for(ContainerListener listener : listeners) {
-                    listener.containerEvent(event);
-                }
-            }
+    @Override
+    public void addContainerListener(ContainerListener listener) {
+        synchronized (listeners) {
+            listeners.add(listener);
         }
+    }
+
+    @Override
+    public ContainerListener[] findContainerListeners() {
+        synchronized (listeners) {
+            return listeners.toArray(new ContainerListener[listeners.size()]);
+        }
+    }
+
+    @Override
+    public void removeContainerListener(ContainerListener listener) {
+        synchronized (listeners) {
+            listeners.remove(listener);
+        }
+    }
+
+    @Override
+    public void addPropertyChangeListener(PropertyChangeListener listener) {
+        support.addPropertyChangeListener(listener);
+    }
+
+    @Override
+    public void removePropertyChangeListener(PropertyChangeListener listener) {
+        support.removePropertyChangeListener(listener);
+    }
+
+    @Override
+    public void addLifecycleListener(LifecycleListener listener) {
+        lifecycle.addLifecycleListener(listener);
+    }
+
+    @Override
+    public LifecycleListener[] findLifecycleListeners() {
+        return lifecycle.findLifecycleListeners();
+    }
+
+    @Override
+    public void removeLifecycleListener(LifecycleListener listener) {
+        lifecycle.removeLifecycleListener(listener);
     }
 
     protected String logName() {

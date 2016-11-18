@@ -1,7 +1,6 @@
 package org.devefx.snio;
 
 import java.net.InetSocketAddress;
-import java.security.Principal;
 
 public interface Request {
 
@@ -21,15 +20,10 @@ public interface Request {
 
     int getLocalPort();
 
-    String getRemoteUser();
-
-    Principal getPrincipal();
-
     String getSessionId();
 
     Session getSession();
 
-    Context getContext();
-
     <T> T readerObject(Class<T> requiredClass);
+
 }

@@ -1,6 +1,4 @@
-package org.devefx.snio.net;
-
-import io.netty.buffer.ByteBuf;
+package org.devefx.snio;
 
 import java.net.SocketAddress;
 
@@ -12,9 +10,8 @@ public interface Sender {
 
     SocketAddress remoteAddress();
 
-    void writeAndFlush(ByteBuf buf);
-
     void writeAndFlush(byte[] bytes);
 
     void close();
+
 }

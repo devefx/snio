@@ -3,7 +3,7 @@ package org.devefx.snio;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 
-public interface Manager extends Lifecycle {
+public interface Manager {
 
     Container getContainer();
 
@@ -49,19 +49,18 @@ public interface Manager extends Lifecycle {
 
     void remove(Session session);
 
+    Session createSession(String sessionId);
+
+    Session findSession(String sessionId);
+
+    Session[] findSessions();
+
+    String[] findSessionIds();
+
     void addPropertyChangeListener(PropertyChangeListener listener);
 
     void removePropertyChangeListener(PropertyChangeListener listener);
 
-    Session createEmptySession();
-
-    Session createSession(String id);
-
-    Session findSession(String id) throws IOException;
-
-    Session[] findSessions();
-    
-    String[] findSessionIds();
-
     void backgroundProcess();
+
 }

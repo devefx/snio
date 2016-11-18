@@ -1,9 +1,10 @@
 package org.devefx.snio;
 
-import java.security.Principal;
 import java.util.Enumeration;
 
 public interface Session {
+    String SESSION_CREATED_EVENT = "createSession";
+    String SESSION_DESTROYED_EVENT = "destroySession";
 
     long getCreationTime();
 
@@ -25,6 +26,10 @@ public interface Session {
 
     void setManager(Manager manager);
 
+    Sender getSender();
+
+    void setSender(Sender sender);
+
     int getMaxInactiveInterval();
 
     void setMaxInactiveInterval(int interval);
@@ -32,10 +37,6 @@ public interface Session {
     boolean isNew();
 
     void setNew(boolean isNew);
-
-    Principal getPrincipal();
-
-    void setPrincipal(Principal principal);
 
     void setValid(boolean valid);
 
@@ -62,5 +63,4 @@ public interface Session {
     void expire();
 
     void recycle();
-
 }

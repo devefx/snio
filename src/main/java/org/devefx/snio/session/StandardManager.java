@@ -1,9 +1,13 @@
 package org.devefx.snio.session;
 
+import org.devefx.snio.Lifecycle;
 import org.devefx.snio.LifecycleException;
+import org.devefx.snio.LifecycleListener;
 import org.devefx.snio.Session;
+import org.devefx.snio.util.LifecycleSupport;
 
-public class StandardManager extends ManagerBase {
+public class StandardManager extends ManagerBase implements Lifecycle {
+    protected LifecycleSupport lifecycle = new LifecycleSupport(this);
     protected int maxActiveSessions = -1;
     protected boolean started = false;
     protected int rejectedSessions = 0;
@@ -15,7 +19,7 @@ public class StandardManager extends ManagerBase {
 
     @Override
     public String getInfo() {
-        return "StandardManager/1.0";
+        return "StandardManager/1.1";
     }
 
     public int getMaxActiveSessions() {
@@ -48,18 +52,29 @@ public class StandardManager extends ManagerBase {
     }
 
     @Override
-    public void start() throws LifecycleException {
-        if (!initialized) {
-            init();
-        }
+    public void addLifecycleListener(LifecycleListener listener) {
+        lifecycle.addLifecycleListener(listener);
+    }
 
+    @Override
+    public LifecycleListener[] findLifecycleListeners() {
+        return lifecycle.findLifecycleListeners();
+    }
+
+    @Override
+    public void removeLifecycleListener(LifecycleListener listener) {
+        lifecycle.removeLifecycleListener(listener);
+    }
+
+    @Override
+    public void start() throws LifecycleException {
         if (!started) {
+            init();
             lifecycle.fireLifecycleEvent(START_EVENT, null);
             started = true;
             if (log.isDebugEnabled()) {
                 log.debug("Force random number initialization starting");
             }
-
             String dummy = generateSessionId();
             if (dummy != null && log.isDebugEnabled()) {
                 log.debug("Force random number initialization completed");

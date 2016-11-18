@@ -1,15 +1,14 @@
 package org.devefx.snio.session;
 
-import org.devefx.snio.Manager;
-import org.devefx.snio.Session;
-import org.devefx.snio.SessionEvent;
-import org.devefx.snio.SessionListener;
+import org.devefx.snio.*;
 import org.devefx.snio.util.Enumerator;
 import org.devefx.snio.util.StringManager;
 
 import java.beans.PropertyChangeSupport;
-import java.security.Principal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -17,6 +16,7 @@ public class StandardSession implements Session {
     protected static final boolean ACTIVITY_CHECK;
     protected static final String[] EMPTY_ARRAY;
     protected Map<String, Object> attributes = new ConcurrentHashMap<>();
+    protected transient String authType = null;
     protected long creationTime = 0L;
     protected transient volatile boolean expiring = false;
 
@@ -24,11 +24,12 @@ public class StandardSession implements Session {
     protected volatile long lastAccessedTime;
     protected transient ArrayList<SessionListener> listeners;
     protected transient Manager manager;
+    protected transient Sender sender;
     protected int maxInactiveInterval;
     protected boolean isNew;
     protected volatile boolean isValid;
-    protected transient Principal principal;
     protected static StringManager sm;
+
     protected transient PropertyChangeSupport support;
     protected volatile long thisAccessedTime;
     protected transient AtomicInteger accessCount;
@@ -36,18 +37,26 @@ public class StandardSession implements Session {
     public StandardSession(Manager manager) {
         this.lastAccessedTime = this.creationTime;
         this.listeners = new ArrayList<>();
-        this.manager = null;
         this.maxInactiveInterval = -1;
         this.isNew = false;
         this.isValid = false;
-        this.principal = null;
         this.support = new PropertyChangeSupport(this);
         this.thisAccessedTime = this.creationTime;
         this.accessCount = null;
         this.manager = manager;
-        if (ACTIVITY_CHECK) {
+        if(ACTIVITY_CHECK) {
             this.accessCount = new AtomicInteger();
         }
+    }
+
+    public String getAuthType() {
+        return authType;
+    }
+
+    public void setAuthType(String authType) {
+        String oldAuthType = this.authType;
+        this.authType = authType;
+        this.support.firePropertyChange("authType", oldAuthType, this.authType);
     }
 
     @Override
@@ -57,9 +66,9 @@ public class StandardSession implements Session {
 
     @Override
     public void setCreationTime(long time) {
-        creationTime = time;
-        lastAccessedTime = time;
-        thisAccessedTime = time;
+        this.creationTime = time;
+        this.lastAccessedTime = time;
+        this.thisAccessedTime = time;
     }
 
     @Override
@@ -74,27 +83,34 @@ public class StandardSession implements Session {
 
     @Override
     public void setId(String id) {
-        if(this.id != null && manager != null) {
-            manager.remove(this);
+        if(this.id != null && this.manager != null) {
+            this.manager.remove(this);
         }
+
         this.id = id;
-        if (manager != null) {
-            manager.add(this);
+        if(this.manager != null) {
+            this.manager.add(this);
         }
-        fireSessionEvent("createSession", null);
+
+        this.tellNew();
+    }
+
+    public void tellNew() {
+        this.fireSessionEvent(SESSION_CREATED_EVENT, null);
     }
 
     @Override
     public String getInfo() {
-        return "StandardSession/1.0";
+        return "StandardSession/1.1";
     }
 
     @Override
     public long getLastAccessedTime() {
-        if (!isValidInternal()) {
+        if(!this.isValidInternal()) {
             throw new IllegalStateException(sm.getString("standardSession.getLastAccessedTime.ise"));
+        } else {
+            return this.lastAccessedTime;
         }
-        return lastAccessedTime;
     }
 
     @Override
@@ -113,6 +129,16 @@ public class StandardSession implements Session {
     }
 
     @Override
+    public Sender getSender() {
+        return sender;
+    }
+
+    @Override
+    public void setSender(Sender sender) {
+        this.sender = sender;
+    }
+
+    @Override
     public int getMaxInactiveInterval() {
         return maxInactiveInterval;
     }
@@ -120,8 +146,8 @@ public class StandardSession implements Session {
     @Override
     public void setMaxInactiveInterval(int interval) {
         this.maxInactiveInterval = interval;
-        if (isValid && interval == 0) {
-            expire();
+        if(this.isValid && interval == 0) {
+            this.expire();
         }
     }
 
@@ -136,18 +162,6 @@ public class StandardSession implements Session {
     }
 
     @Override
-    public Principal getPrincipal() {
-        return principal;
-    }
-
-    @Override
-    public void setPrincipal(Principal principal) {
-        Principal oldPrincipal = this.principal;
-        this.principal = principal;
-        this.support.firePropertyChange("principal", oldPrincipal, this.principal);
-    }
-
-    @Override
     public void setValid(boolean valid) {
         this.isValid = valid;
     }
@@ -158,12 +172,14 @@ public class StandardSession implements Session {
             return true;
         } else if(!this.isValid) {
             return false;
+        } else if(ACTIVITY_CHECK && this.accessCount.get() > 0) {
+            return true;
         } else {
             if(this.maxInactiveInterval >= 0) {
                 long timeNow = System.currentTimeMillis();
                 int timeIdle = (int)((timeNow - this.thisAccessedTime) / 1000L);
                 if(timeIdle >= this.maxInactiveInterval) {
-                    expire();
+                    this.expire(true);
                 }
             }
             return this.isValid;
@@ -176,26 +192,27 @@ public class StandardSession implements Session {
 
     @Override
     public void invalidate() {
-        if (!isValidInternal()) {
+        if(!this.isValidInternal()) {
             throw new IllegalStateException(sm.getString("standardSession.invalidate.ise"));
+        } else {
+            this.expire();
         }
-        expire();
     }
 
     @Override
     public void access() {
-        lastAccessedTime = thisAccessedTime;
-        thisAccessedTime = System.currentTimeMillis();
+        this.lastAccessedTime = this.thisAccessedTime;
+        this.thisAccessedTime = System.currentTimeMillis();
         if(ACTIVITY_CHECK) {
-            accessCount.incrementAndGet();
+            this.accessCount.incrementAndGet();
         }
     }
 
     @Override
     public void endAccess() {
-        isNew = false;
-        if (ACTIVITY_CHECK) {
-            accessCount.decrementAndGet();
+        this.isNew = false;
+        if(ACTIVITY_CHECK) {
+            this.accessCount.decrementAndGet();
         }
     }
 
@@ -211,30 +228,32 @@ public class StandardSession implements Session {
 
     @Override
     public Object getAttribute(String name) {
-        if (!isValidInternal()) {
-            throw new IllegalStateException(sm.getString("standardSession.getAttributeNames.ise"));
+        if(!this.isValidInternal()) {
+            throw new IllegalStateException(sm.getString("standardSession.getAttribute.ise"));
+        } else {
+            return name == null ? null : this.attributes.get(name);
         }
-        return name == null ? null : attributes.get(name);
     }
 
     @Override
     public Enumeration<String> getAttributeNames() {
-        if (!isValidInternal()) {
+        if(!this.isValidInternal()) {
             throw new IllegalStateException(sm.getString("standardSession.getAttributeNames.ise"));
+        } else {
+            return new Enumerator<String>(this.attributes.keySet(), true);
         }
-        return new Enumerator<String>(attributes.keySet(), false);
     }
 
     @Override
     public void setAttribute(String name, Object value) {
-        setAttribute(name, value, true);
+        this.setAttribute(name, value, true);
     }
 
     public void setAttribute(String name, Object value, boolean notify) {
         if(name == null) {
             throw new IllegalArgumentException(sm.getString("standardSession.setAttribute.namenull"));
         } else if(value == null) {
-            removeAttribute(name);
+            this.removeAttribute(name);
         } else if(!this.isValidInternal()) {
             throw new IllegalStateException(sm.getString("standardSession.setAttribute.ise"));
         } else {
@@ -251,18 +270,22 @@ public class StandardSession implements Session {
 
     @Override
     public void removeAttribute(String name) {
-        removeAttribute(name, true);
+        this.removeAttribute(name, true);
     }
 
     public void removeAttribute(String name, boolean notify) {
-        if(!isValidInternal()) {
+        if(!this.isValidInternal()) {
             throw new IllegalStateException(sm.getString("standardSession.removeAttribute.ise"));
         } else {
-            if(name != null) {
-                Object value = this.attributes.remove(name);
-                if (notify && value != null) {
-                    fireSessionEvent("sessionAttributeRemoved", null);
-                }
+            this.removeAttributeInternal(name, notify);
+        }
+    }
+
+    public void removeAttributeInternal(String name, boolean notify) {
+        if(name != null) {
+            Object value = this.attributes.remove(name);
+            if (notify && value != null) {
+                fireSessionEvent("sessionAttributeRemoved", null);
             }
         }
     }
@@ -273,53 +296,56 @@ public class StandardSession implements Session {
     }
 
     public void expire(boolean notify) {
-        synchronized (this) {
-            if (!expiring && isValid && manager != null) {
-                expiring = true;
+        if(!this.expiring && this.isValid && manager != null) {
+            synchronized (this) {
+                this.expiring = true;
 
-                if (ACTIVITY_CHECK) {
-                    accessCount.set(0);
+                if(ACTIVITY_CHECK) {
+                    this.accessCount.set(0);
                 }
 
-                setValid(false);
-                long t1 = System.currentTimeMillis();
-                int timeAlive = (int) ((t1 - creationTime) / 1000L);
-                int expired = 0;
-                synchronized (manager) {
-                    if (timeAlive > manager.getSessionMaxAliveTime()) {
-                        manager.setSessionMaxAliveTime(timeAlive);
+                this.setValid(false);
+                long time = System.currentTimeMillis();
+                int timeAlive = (int)((time - this.creationTime) / 1000L);
+                int expired;
+                synchronized(this.manager) {
+                    if(timeAlive > this.manager.getSessionMaxAliveTime()) {
+                        this.manager.setSessionMaxAliveTime(timeAlive);
                     }
-                    expired = manager.getExpiredSessions();
-                    expired++;
-                    manager.setExpiredSessions(expired);
-                    int average = manager.getSessionAverageAliveTime();
+                    expired = this.manager.getExpiredSessions();
+                    ++expired;
+                    this.manager.setExpiredSessions(expired);
+                    int average = this.manager.getSessionAverageAliveTime();
                     average = (average * (expired - 1) + timeAlive) / expired;
-                    manager.setSessionAverageAliveTime(average);
+                    this.manager.setSessionAverageAliveTime(average);
                 }
 
-                manager.remove(this);
-                if (notify) {
-                    fireSessionEvent("destroySession", null);
+                this.manager.remove(this);
+                if(notify) {
+                    this.fireSessionEvent(SESSION_DESTROYED_EVENT, null);
                 }
 
-                expiring = false;
-                for (String key : attributes.keySet()) {
-                    removeAttribute(key, notify);
+                this.expiring = false;
+                String[] keys = this.keys();
+
+                for(int i = 0; i < keys.length; ++i) {
+                    this.removeAttributeInternal(keys[i], notify);
                 }
+
+                sender.close();
             }
-
         }
     }
 
     @Override
     public void recycle() {
         this.attributes.clear();
+        this.setAuthType(null);
         this.creationTime = 0L;
         this.expiring = false;
         this.id = null;
         this.lastAccessedTime = 0L;
         this.maxInactiveInterval = -1;
-        this.setPrincipal(null);
         this.isNew = false;
         this.isValid = false;
         this.manager = null;
@@ -333,6 +359,18 @@ public class StandardSession implements Session {
                 it.next().sessionEvent(event);
             }
         }
+    }
+
+    protected String[] keys() {
+        return this.attributes.keySet().toArray(EMPTY_ARRAY);
+    }
+
+    public String toString() {
+        StringBuffer sb = new StringBuffer();
+        sb.append("StandardSession[");
+        sb.append(this.id);
+        sb.append("]");
+        return sb.toString();
     }
 
     static {

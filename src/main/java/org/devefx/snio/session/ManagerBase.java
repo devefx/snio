@@ -46,7 +46,6 @@ public abstract class ManagerBase implements Manager {
     protected int processExpiresFrequency = 6;
     protected StringManager sm = StringManager.getManager("org.devefx.snio.session");
     protected PropertyChangeSupport support = new PropertyChangeSupport(this);
-    protected LifecycleSupport lifecycle = new LifecycleSupport(this);
 
     @Override
     public Container getContainer() {
@@ -62,7 +61,7 @@ public abstract class ManagerBase implements Manager {
 
     @Override
     public String getInfo() {
-        return "ManagerBase/1.0";
+        return "ManagerBase/1.1";
     }
 
     @Override
@@ -154,7 +153,7 @@ public abstract class ManagerBase implements Manager {
 
     @Override
     public void add(Session session) {
-        sessions.put(session.getIdInternal(), session);
+        sessions.put(session.getId(), session);
         int size = sessions.size();
         if(size > maxActive) {
             maxActive = size;
@@ -167,6 +166,21 @@ public abstract class ManagerBase implements Manager {
     }
 
     @Override
+    public Session findSession(String id) {
+        return id == null ? null : sessions.get(id);
+    }
+
+    @Override
+    public Session[] findSessions() {
+        return sessions.values().toArray(new Session[0]);
+    }
+
+    @Override
+    public String[] findSessionIds() {
+        return sessions.keySet().toArray(new String[0]);
+    }
+
+    @Override
     public void addPropertyChangeListener(PropertyChangeListener listener) {
         support.addPropertyChangeListener(listener);
     }
@@ -175,30 +189,10 @@ public abstract class ManagerBase implements Manager {
     public void removePropertyChangeListener(PropertyChangeListener listener) {
         support.removePropertyChangeListener(listener);
     }
-    
-    @Override
-    public void addLifecycleListener(LifecycleListener listener) {
-        lifecycle.addLifecycleListener(listener);
-    }
-
-    @Override
-    public LifecycleListener[] findLifecycleListeners() {
-        return lifecycle.findLifecycleListeners();
-    }
-
-    @Override
-    public void removeLifecycleListener(LifecycleListener listener) {
-        lifecycle.removeLifecycleListener(listener);
-    }
-    
-    @Override
-    public Session createEmptySession() {
-        return new StandardSession(this);
-    }
 
     @Override
     public Session createSession(String sessionId) {
-        Session session = this.createEmptySession();
+        Session session = new StandardSession(this);
         session.setNew(true);
         session.setValid(true);
         session.setCreationTime(System.currentTimeMillis());
@@ -209,21 +203,6 @@ public abstract class ManagerBase implements Manager {
         session.setId(sessionId);
         ++sessionCounter;
         return session;
-    }
-
-    @Override
-    public Session findSession(String id) throws IOException {
-        return id == null ? null : sessions.get(id);
-    }
-
-    @Override
-    public Session[] findSessions() {
-        return sessions.values().toArray(new Session[0]);
-    }
-    
-    @Override
-    public String[] findSessionIds() {
-    	return sessions.keySet().toArray(new String[0]);
     }
 
     @Override
@@ -239,12 +218,11 @@ public abstract class ManagerBase implements Manager {
         Session[] sessions = findSessions();
         int expireHere = 0;
         if(log.isDebugEnabled()) {
-            log.debug("Start expire sessions " + getName() + " at " + timeNow + " sessioncount " + sessions.length);
+            log.debug("Start expire sessions " + getName() + " at " + timeNow + " session count " + sessions.length);
         }
 
         for(int timeEnd = 0; timeEnd < sessions.length; ++timeEnd) {
             if(sessions[timeEnd] != null && !sessions[timeEnd].isValid()) {
-            	lifecycle.fireLifecycleEvent(SESSION_EXPIRED_EVENT, sessions[timeEnd].getId());
                 ++expireHere;
             }
         }
@@ -436,9 +414,9 @@ public abstract class ManagerBase implements Manager {
         }
         getRandom().nextBytes(bytes);
     }
-    
+
     protected boolean containsSession(String id) {
-    	return sessions.containsKey(id);
+        return sessions.containsKey(id);
     }
 
     protected synchronized String generateSessionId() {
@@ -478,4 +456,5 @@ public abstract class ManagerBase implements Manager {
 
         return result;
     }
+
 }

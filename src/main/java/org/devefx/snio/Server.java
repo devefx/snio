@@ -4,10 +4,6 @@ public interface Server {
 
     String getInfo();
 
-    String getName();
-
-    void setName(String name);
-
     int getPort();
 
     void setPort(int port);
@@ -20,9 +16,9 @@ public interface Server {
 
     void removeService(Service service);
 
-    Engine getEngine();
+    Container getContainer();
 
-    void setEngine(Engine engine);
+    void setContainer(Container container);
 
     void initialize() throws LifecycleException;
 }

@@ -1,14 +1,12 @@
 package org.devefx.snio;
 
-public interface Engine {
+public interface Engine extends Container    {
 
-    String getDefaultHost();
+    String getHost();
 
-    void setDefaultHost(String host);
+    void setHost(String host);
 
     void addServer(Server server);
-
-    Server findServer(String name);
 
     Server[] findServers();
 

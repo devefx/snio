@@ -15,6 +15,7 @@
         <protobuf.version>2.6.1</protobuf.version>
         <jedis.version>2.8.1</jedis.version>
         <kryo.version>4.0.0</kryo.version>
+        <log4j.version>1.2.17</log4j.version>
     </properties>
     <licenses>
         <license>
@@ -72,6 +73,13 @@
             <artifactId>slf4j-log4j12</artifactId>
             <version>${slf4j.version}</version>
             <scope>provided</scope>
+        </dependency>
+        <!-- logger -->
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>${log4j.version}</version>
+            <scope>test</scope>
         </dependency>
         <!-- protobuf -->
         <dependency>

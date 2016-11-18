@@ -7,33 +7,37 @@
         http://www.devefx.org/schema/snio
         http://www.devefx.org/schema/snio/spring-snio-1.0.xsd">
 
-    <!-- 自定义会话管理器 -->
+    <!--
     <bean id="redisSessionManager" class="org.devefx.snio.session.redis.RedisSessionManager">
-        <property name="host" value="192.168.3.6"/>
-        <property name="port" value="6388"/>
+        <property name="host" value="localhost"/>
+        <property name="port" value="6379"/>
         <property name="database" value="0"/>
         <property name="maxInactiveInterval" value="60"/>
-        <property name="password" value="redispwd"/>
+        <property name="timeout" value="2000"/>
+        <property name="password" value="your password"/>
     </bean>
+ -->
 
-    <!-- 服务器引擎 -->
-    <snio:engine id="engine" host="localhost" auto-start="true" manager-ref="redisSessionManager">
-        <!-- tcp服务器 -->
-        <snio:udp name="udp-server" port="7777">
-            <snio:decoder class="org.devefx.snio.codec.ByteArrayDecoder"/>
-            <snio:services>
-                <snio:service class="snio.service.LoginService"/>
-                <snio:service class="snio.service.LoginService"/>
-            </snio:services>
-        </snio:udp>
-        <!-- udp服务器 -->
-        <snio:tcp name="tcp-server" port="8888">
-            <snio:decoder class="org.devefx.snio.codec.ByteArrayDecoder"/>
-            <snio:services>
-                <snio:service class="snio.service.LoginService"/>
-                <snio:service class="snio.service.LoginService"/>
-            </snio:services>
-        </snio:tcp>
+    <snio:engine host="localhost">
+        <snio:servers>
+            <snio:tcp port="8888" lengthFieldLength="4">
+                <snio:server-initializer class="org.example.config.TCPServerInitializer"/>
+                <snio:service-scan base-package="org.example.service"/>
+                <snio:services>
+                    <snio:service class="org.example.service.ExampleService"/>
+                </snio:services>
+            </snio:tcp>
+            <snio:udp port="9999">
+                <snio:server-initializer class="org.example.config.UDPServerInitializer"/>
+                <snio:service-scan base-package="org.example.service"/>
+                <snio:services>
+                    <snio:service class="org.example.service.ExampleService"/>
+                </snio:services>
+            </snio:udp>
+        </snio:servers>
+        <!--
+        <snio:manager ref="redisSessionManager"/>
+        -->
     </snio:engine>
 
 </beans>

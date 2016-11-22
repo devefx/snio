@@ -38,7 +38,7 @@ public class SnioDecoder extends MessageToMessageDecoder<Object> {
     }
 
     @Override
-    protected void decode(ChannelHandlerContext ctx, Object msg, List out) throws Exception {
+    protected void decode(ChannelHandlerContext ctx, Object msg, List<Object> out) throws Exception {
 
         StandardRequest request = new StandardRequest();
 

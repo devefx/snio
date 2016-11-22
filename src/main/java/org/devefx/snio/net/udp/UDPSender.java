@@ -43,7 +43,7 @@ public class UDPSender implements Sender {
 
     @Override
     public void close() {
-        channel.close();
+
     }
 
 

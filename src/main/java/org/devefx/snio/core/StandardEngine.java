@@ -70,6 +70,10 @@ public class StandardEngine extends ContainerBase implements Engine {
         }
     }
 
+    public boolean isRunning() {
+        return started;
+    }
+
     public void stopAwait() {
         this.stopAwait = true;
     }

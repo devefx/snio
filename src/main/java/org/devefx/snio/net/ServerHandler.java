@@ -2,20 +2,20 @@ package org.devefx.snio.net;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import org.devefx.snio.event.RequestDispatcher;
-import org.devefx.snio.event.RequestEvent;
+import org.devefx.snio.Request;
+import org.devefx.snio.core.Dispatcher;
 
-public class ServerHandler extends SimpleChannelInboundHandler<RequestEvent> {
+public class ServerHandler extends SimpleChannelInboundHandler<Request> {
 
-    protected RequestDispatcher dispatcher;
+    protected Dispatcher dispatcher;
 
-    public ServerHandler(RequestDispatcher dispatcher) {
+    public ServerHandler(Dispatcher dispatcher) {
         this.dispatcher = dispatcher;
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, RequestEvent msg) throws Exception {
-        dispatcher.push(msg);
+    protected void channelRead0(ChannelHandlerContext ctx, Request request) throws Exception {
+        dispatcher.push(request);
     }
 
     @Override

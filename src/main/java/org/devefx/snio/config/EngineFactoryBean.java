@@ -1,15 +1,16 @@
 package org.devefx.snio.config;
 
 import org.devefx.snio.Engine;
+import org.devefx.snio.LifecycleException;
 import org.devefx.snio.Manager;
 import org.devefx.snio.Server;
 import org.devefx.snio.core.StandardEngine;
 import org.springframework.beans.factory.FactoryBean;
-import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.Lifecycle;
 
 import java.util.List;
 
-public class EngineFactoryBean implements FactoryBean<Engine>, InitializingBean {
+public class EngineFactoryBean implements FactoryBean<Engine>, Lifecycle {
 
     private StandardEngine engine = new StandardEngine();
 
@@ -45,9 +46,26 @@ public class EngineFactoryBean implements FactoryBean<Engine>, InitializingBean 
     }
 
     @Override
-    public void afterPropertiesSet() throws Exception {
-        engine.start();
-        engine.await();
+    public void start() {
+        try {
+            engine.start();
+            engine.await();
+        } catch (LifecycleException e) {
+            e.printStackTrace();
+        }
     }
 
+    @Override
+    public void stop() {
+        try {
+            engine.stop();
+        } catch (LifecycleException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public boolean isRunning() {
+        return engine.isRunning();
+    }
 }

@@ -4,15 +4,15 @@ import org.devefx.snio.config.ServerFactoryBean;
 import org.devefx.snio.config.spring.service.ClassBeanDefinitionParser;
 import org.devefx.snio.config.spring.service.ServiceScanBeanDefinitionParser;
 import org.devefx.snio.config.spring.service.ServicesBeanDefinitionParser;
+import org.devefx.snio.config.spring.util.ServiceRegistry;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
-import org.springframework.beans.factory.support.ManagedSet;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 
 public class ServerBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
-    private ManagedSet<BeanDefinition> serviceManagedSet;
+    private ServiceRegistry registry;
 
     public ServerBeanDefinitionParser(Class<?> beanClass) {
         super(beanClass);
@@ -20,9 +20,9 @@ public class ServerBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
     @Override
     public void init() {
-        serviceManagedSet = new ManagedSet<>();
-        registerBeanDefinitionParser("services", new ServicesBeanDefinitionParser(serviceManagedSet));
-        registerBeanDefinitionParser("service-scan", new ServiceScanBeanDefinitionParser(serviceManagedSet));
+        registry = new ServiceRegistry();
+        registerBeanDefinitionParser("services", new ServicesBeanDefinitionParser(registry));
+        registerBeanDefinitionParser("service-scan", new ServiceScanBeanDefinitionParser(registry));
         registerBeanDefinitionParser("server-initializer", new ClassBeanDefinitionParser());
     }
 
@@ -47,7 +47,7 @@ public class ServerBeanDefinitionParser extends AbstractBeanDefinitionParser {
             }
         });
 
-        beanDefinition.getPropertyValues().add("services", serviceManagedSet);
+        beanDefinition.getPropertyValues().add("services", registry.getBeanReferences());
         return beanDefinition;
     }
 }

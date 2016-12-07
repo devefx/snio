@@ -9,7 +9,6 @@ import org.devefx.snio.Manager;
 import org.devefx.snio.Sender;
 import org.devefx.snio.Service;
 import org.devefx.snio.Session;
-import org.devefx.snio.event.RequestEvent;
 import org.devefx.snio.net.StandardRequest;
 import org.devefx.snio.net.tcp.TCPSender;
 import org.devefx.snio.net.udp.UDPSender;
@@ -80,8 +79,9 @@ public class SnioDecoder extends MessageToMessageDecoder<Object> {
         request.setSession(session);
         request.setObject(bytes);
         request.setContentLength(bytes.length);
+        request.setRequestType(Service.DEFAULT_TYPE);
 
-        out.add(new RequestEvent(request, Service.DEFAULT_TYPE));
+        out.add(request);
     }
 
     protected String makeSessionIdForAddress(SocketAddress address) {

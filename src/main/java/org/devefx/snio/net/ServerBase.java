@@ -1,7 +1,7 @@
 package org.devefx.snio.net;
 
 import org.devefx.snio.*;
-import org.devefx.snio.event.RequestDispatcher;
+import org.devefx.snio.core.Dispatcher;
 import org.devefx.snio.util.LifecycleSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +23,7 @@ public abstract class ServerBase implements Server, Lifecycle, Runnable {
     protected PropertyChangeSupport support = new PropertyChangeSupport(this);
     protected Container container;
     protected ServerInitializer serverInitializer;
-    protected RequestDispatcher dispatcher = new RequestDispatcher(this);
+    protected Dispatcher dispatcher = new Dispatcher(this);
 
     @Override
     public Container getContainer() {

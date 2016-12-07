@@ -1,4 +1,4 @@
-package org.devefx.snio.event;
+package org.devefx.snio.core;
 
 import org.devefx.snio.*;
 import org.devefx.snio.util.LifecycleSupport;
@@ -8,15 +8,15 @@ import org.slf4j.LoggerFactory;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
-public class RequestDispatcher implements Lifecycle, Runnable {
+public class Dispatcher implements Lifecycle, Runnable {
 
-    private static final Logger log = LoggerFactory.getLogger(RequestDispatcher.class);
+    private static final Logger log = LoggerFactory.getLogger(Dispatcher.class);
     protected LifecycleSupport lifecycle = new LifecycleSupport(this);
-    private Queue<RequestEvent> eventQueue = new ConcurrentLinkedDeque<>();
+    private Queue<Request> eventQueue = new ConcurrentLinkedDeque<>();
     private Thread thread;
     private Server server;
 
-    public RequestDispatcher(Server server) {
+    public Dispatcher(Server server) {
         this.server = server;
     }
 
@@ -24,9 +24,9 @@ public class RequestDispatcher implements Lifecycle, Runnable {
         return server;
     }
 
-    public void push(RequestEvent event) {
+    public void push(Request request) {
         synchronized (eventQueue) {
-            eventQueue.add(event);
+            eventQueue.add(request);
             eventQueue.notifyAll();
         }
     }
@@ -78,18 +78,19 @@ public class RequestDispatcher implements Lifecycle, Runnable {
                         e.printStackTrace();
                     }
                 }
-                RequestEvent event;
-                while ((event = eventQueue.poll()) != null) {
-                    Request request = event.getRequest();
+                Request request;
+                while ((request = eventQueue.poll()) != null) {
                     request.getSession().access();
-                    fireRequestEvent(request, event.getType());
+                    fireRequestEvent(request);
                     request.getSession().endAccess();
                 }
             }
         }
     }
 
-    protected void fireRequestEvent(Request request, Object type) {
+    protected void fireRequestEvent(Request request) {
+        Object type = request.getRequestType();
+
         Service service = server.findService(type);
         if (service != null) {
             if (log.isInfoEnabled()) {

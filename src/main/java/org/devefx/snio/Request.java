@@ -24,6 +24,8 @@ public interface Request {
 
     Session getSession();
 
+    Object getRequestType();
+
     <T> T readerObject(Class<T> requiredClass);
 
 }

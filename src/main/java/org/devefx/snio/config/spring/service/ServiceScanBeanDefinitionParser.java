@@ -1,5 +1,6 @@
 package org.devefx.snio.config.spring.service;
 
+import org.devefx.snio.config.spring.util.ServiceRegistry;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.*;
 import org.springframework.beans.factory.xml.BeanDefinitionParser;
@@ -21,10 +22,10 @@ public class ServiceScanBeanDefinitionParser implements BeanDefinitionParser {
     static final String DEFAULT_RESOURCE_PATTERN = "**/*.class";
     static final String ATTRIBUTE_BASE_PACKAGE = "base-package";
 
-    private ManagedSet<BeanDefinition> serviceManagedSet;
+    private ServiceRegistry registry;
 
-    public ServiceScanBeanDefinitionParser(ManagedSet<BeanDefinition> serviceManagedList) {
-        this.serviceManagedSet = serviceManagedList;
+    public ServiceScanBeanDefinitionParser(ServiceRegistry registry) {
+        this.registry = registry;
     }
 
     @Override
@@ -44,7 +45,8 @@ public class ServiceScanBeanDefinitionParser implements BeanDefinitionParser {
                     if (metadata.isIndependent()) {
                         GenericBeanDefinition definition = new GenericBeanDefinition();
                         definition.setBeanClassName(metadata.getClassName());
-                        serviceManagedSet.add(definition);
+
+                        registry.register(definition, parserContext.getRegistry());
                     }
                 }
             }
@@ -53,5 +55,4 @@ public class ServiceScanBeanDefinitionParser implements BeanDefinitionParser {
         }
         return null;
     }
-
 }

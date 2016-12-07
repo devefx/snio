@@ -13,6 +13,7 @@ public class StandardRequest implements Request {
     private InetSocketAddress localAddr;
     private Session session;
     private Object object;
+    private Object requestType;
 
     public void setProtocol(String protocol) {
         this.protocol = protocol;
@@ -36,6 +37,10 @@ public class StandardRequest implements Request {
 
     public void setObject(Object object) {
         this.object = object;
+    }
+
+    public void setRequestType(Object requestType) {
+        this.requestType = requestType;
     }
 
     @Override
@@ -86,6 +91,11 @@ public class StandardRequest implements Request {
     @Override
     public Session getSession() {
         return session;
+    }
+
+    @Override
+    public Object getRequestType() {
+        return requestType;
     }
 
     @Override
